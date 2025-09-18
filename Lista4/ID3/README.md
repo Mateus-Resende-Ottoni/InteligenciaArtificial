@@ -1,0 +1,1 @@
+This package implements a decision tree using the ID3 alghoritm.
