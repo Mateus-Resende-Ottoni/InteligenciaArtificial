@@ -186,7 +186,23 @@ class ID3:
 
     def test_tree(self, test_data, test_results):
         confusionMatrix = pd.DataFrame(index=self.results_list, columns=self.results_list)
+        for instancia in test_data.index:
+            confusionMatrix = self.test_rule(self.root, test_data, test_results, instancia, confusionMatrix)
+        return confusionMatrix
 
+    def test_rule(self, rule, test_data, test_results, instancia, confusionMatrix):
+        # Testar se o nó é final ou não
+        if rule.attribute == '(Final)':
+            # Adicionar mais um na matriz
+            # Coluna é o resultado esperado
+            # Linha é o real
+            confusionMatrix[rule.result][test_results[instancia]] += 1
+        else:
+            # Checar a qual ramo a instância pertence
+            for ramo in rule.connections:
+                if ramo.result_name == test_data[rule.attribute][instancia]:
+                    confusionMatrix = self.test_rule(self, ramo.rule, test_data, test_results, instancia, confusionMatrix)
+        return confusionMatrix
 
 #-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_
     
