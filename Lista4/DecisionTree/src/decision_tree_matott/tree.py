@@ -530,8 +530,17 @@ class C45:
         else:
             # Checar a qual ramo a instância pertence
             for ramo in rule.connections:
-                if ramo.result_name == test_data[rule.attribute][instancia]:
-                    confusionMatrix = self.test_rule(self, ramo.rule, test_data, test_results, instancia, confusionMatrix)
+                if rule.value != None:
+                    if test_data[rule.attribute][instancia] != None:
+                        if ramo.result_name == '>' and test_data[rule.attribute][instancia] > rule.value:
+                            confusionMatrix = self.test_rule(self, ramo.rule, test_data, test_results, instancia, confusionMatrix)
+                        elif ramo.result_name == '<=' and test_data[rule.attribute][instancia] <= rule.value:
+                            confusionMatrix = self.test_rule(self, ramo.rule, test_data, test_results, instancia, confusionMatrix)
+                    else:
+                        confusionMatrix[rule.result][test_results[instancia]] += 1
+                else:
+                    if ramo.result_name == test_data[rule.attribute][instancia]:
+                        confusionMatrix = self.test_rule(self, ramo.rule, test_data, test_results, instancia, confusionMatrix)
         return confusionMatrix
 
 #-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_
