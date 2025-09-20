@@ -288,13 +288,13 @@ class C45:
                         if (ramo.result_name == '>'):
                             # Remover dados não pertencentes ao ramo
                             for row in data.index:
-                                if data[regra_resultante.attribute][row] <= ramo.result_name or data[regra_resultante.attribute][row] == None:
+                                if data[regra_resultante.attribute][row] <= regra_resultante.value or data[regra_resultante.attribute][row] == None:
                                     data_branch = data_branch.drop(index=row)
                                     result_branch = result_branch.drop(index=row)
                         else:
                             # Remover dados não pertencentes ao ramo
                             for row in data.index:
-                                if data[regra_resultante.attribute][row] > ramo.result_name or data[regra_resultante.attribute][row] == None:
+                                if data[regra_resultante.attribute][row] > regra_resultante.value or data[regra_resultante.attribute][row] == None:
                                     data_branch = data_branch.drop(index=row)
                                     result_branch = result_branch.drop(index=row)
                         # Chamar método de montagem da regra
@@ -418,7 +418,7 @@ class C45:
                 # Obter valor numérico de menor entropia
                 associacao_final = lista_ganhos_por_valor[0]
                 for associacao in lista_ganhos_por_valor:
-                    if (associacao.ganho < associacao_final):
+                    if (associacao.ganho < associacao_final.ganho):
                         associacao_final = associacao
                 somatorio_ganhoinfo = associacao_final.ganho
                 # Ganho = Ganho da classe - Somatório
@@ -572,6 +572,331 @@ class C45:
 
 #-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-
 #_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_
+#-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-
+#_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_
+# Criação do objeto
+
+class CART:
+    # Criar árvore
+    def __init__ (self, max_height, min_information, data, results, classification_attribute):
+        # Altura máxima
+        # -1 significa que não tem máximo
+        self.max_height = max_height
+        self.current_height = 0
+        # Regras para o ganho de informação
+        self.min_information = min_information
+        # Base de dados inicial
+        self.data = data
+        # Atributo buscado na classificação
+        self.classification_attribute = classification_attribute
+        # Contar na coluna de resultados quantos há
+        self.results_list = list(set(results))
+        self.results_n = len(list(set(results)))
+        # Definir raiz
+        self.root = None
+        # Teste
+
+#-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_
+# Montagem da árvore
+
+    # Montar árvore
+    def create_tree(self, data, result):
+        # Chamar método de montagem da árvore para a raiz
+        self.root = self.define_rule(self.root, data, result, 0)
+
+    # Método para montagem de árvore
+    def define_rule(self, current_rule, data, result, level):
+        # Chamar método de determinação de atributo e salvar regra de montagem
+        regra_resultante = self.define_attribute(data, result, level)
+        # Se retorno tiver sido nulo, parar
+        # Retorno nulo significa que o ganho na regra não foi suficiente
+        if ( (regra_resultante != None) ):
+            # Se ainda não tiver chegado no limite de altura 
+            if ( (self.current_height < self.max_height) or (self.max_height == -1) ):
+                # Para caso seja uma regra para atributo numérico
+                if ( (type(regra_resultante.value) == int) or (type(regra_resultante.value) == float) ):
+                    # Para cada ramo, chamar método de montagem da árvore
+                    for ramo in regra_resultante.connections:
+                        # Tabela completa para remover atributos que não encaixarem
+                        data_branch = data
+                        result_branch = result
+                        if (ramo.result_name == '>'):
+                            # Remover dados não pertencentes ao ramo
+                            for row in data.index:
+                                if data[regra_resultante.attribute][row] <= regra_resultante.value or data[regra_resultante.attribute][row] == None:
+                                    data_branch = data_branch.drop(index=row)
+                                    result_branch = result_branch.drop(index=row)
+                        else:
+                            # Remover dados não pertencentes ao ramo
+                            for row in data.index:
+                                if data[regra_resultante.attribute][row] > regra_resultante.value or data[regra_resultante.attribute][row] == None:
+                                    data_branch = data_branch.drop(index=row)
+                                    result_branch = result_branch.drop(index=row)
+                        # Chamar método de montagem da regra
+                        ramo.rule = self.define_rule(ramo.rule, data_branch, result_branch, level+1)
+                else:
+                    # Para cada ramo, chamar método de montagem da árvore
+                    for ramo in regra_resultante.connections:
+                        # Tabela completa para remover atributos que não encaixarem
+                        data_branch = data
+                        result_branch = result
+                        if (ramo.result_name == '=='):
+                            # Remover dados não pertencentes ao ramo
+                            for row in data.index:
+                                if data[regra_resultante.attribute][row] != regra_resultante.value or data[regra_resultante.attribute][row] == None:
+                                    data_branch = data_branch.drop(index=row)
+                                    result_branch = result_branch.drop(index=row)
+                        else:
+                            # Remover dados não pertencentes ao ramo
+                            for row in data.index:
+                                if data[regra_resultante.attribute][row] == regra_resultante.value or data[regra_resultante.attribute][row] == None:
+                                    data_branch = data_branch.drop(index=row)
+                                    result_branch = result_branch.drop(index=row)
+                        # Chamar método de montagem da regra
+                        ramo.rule = self.define_rule(ramo.rule, data_branch, result_branch, level+1)
+        return regra_resultante
+
+    # Método de determinação de atributo (recebendo dados e resultados de treino)
+    def define_attribute(self, data_unformatted, results, level):
+        # Formatar dados para melhor uso
+        data = pd.DataFrame(data_unformatted)
+        # Número de linhas
+        n_instancias = len(data)
+        resultados_distintos = list(set(results))
+        n_resultados = len(list(set(results)))
+
+        # Caso só haja um resultado distinto, não é necessário determinar uma regra
+        if n_resultados == 1:
+            regra = rule.DecisionRuleCART('(Final)', 1.0, data, results, level)
+            return regra
+
+        # Criar lista separada para contabilizar ganho de informação em cada coluna
+        attributes_gain = []
+        # Loop de for para cada coluna
+        for column in data.columns:
+            lista_resultados = list(set(data[column]))
+            valor_teste = 0
+            # Para evitar o teste a seguir com um valor de None
+            # Supõe-se que terá ao menos um valor não nulo
+            while type(lista_resultados[valor_teste]) == None:
+                valor_teste = valor_teste + 1
+            # Se forem valores numéricos, tratar de forma diferente
+            # Supõe-se que o tipo é consistente, então não é necessário testar o tipo de todas possibilidades
+            if type(lista_resultados[valor_teste]) == int or type(lista_resultados[valor_teste]) == float:
+                lista_ganhos_por_valor = []
+                gini = 0
+                # Número de instâncias nulas da coluna
+                n_none = 0
+                # Cálculo de gini
+                # Para cada entrada possível
+                for entrada in lista_resultados:
+                    if entrada != None:
+                        soma_maior = 0
+                        soma_menorigual = 0
+                        frequenciat_maior = 0       # Frequência total
+                        frequenciat_menorigual = 0  # Frequência total
+                        # Contabilizar instancias da entrada menor/igual e maiores
+                        for instancia in data[column]:
+                            if ( instancia != None ):
+                                if instancia <= entrada:
+                                    frequenciat_menorigual = frequenciat_menorigual + 1
+                                else:
+                                    frequenciat_maior = frequenciat_maior + 1
+                        frequencia_total = frequenciat_menorigual + frequenciat_maior
+                        # Contabilizar quantos em cada resultado
+                        for resultado in resultados_distintos:
+                            frequencia = 0
+                            frequencia_maior = 0
+                            frequencia_menorigual = 0
+                            for instancia in data.index:
+                                if ( (results[instancia] == resultado) ):
+                                    frequencia = frequencia + 1
+                                    if (data[column][instancia] <= entrada):
+                                        frequencia_menorigual = frequencia_menorigual + 1
+                                    else:
+                                        frequencia_maior = frequencia_maior + 1
+                            # Probabilidade do resultado ^ 2
+                            # Somar ao dos demais resultados
+                            # Se a frequência for zero, efetivamente somamos 0, o que significa nada
+                            if frequencia != 0:
+                                # Menor/Igual
+                                soma_menorigual = soma_menorigual + pow((frequencia_menorigual/(frequencia_menorigual+frequencia_maior)), 2)
+                                # Maior
+                                soma_maior = soma_maior + pow((frequencia_maior/(frequencia_menorigual+frequencia_maior)), 2)
+                        # Para obter gini, subtrair de 1 o somatório das probabilidades
+                        soma_menorigual = 1 - soma_menorigual
+                        soma_maior = 1 - soma_maior
+                        # Obter gini ponderado
+                        gini = (soma_menorigual * (frequenciat_menorigual/frequencia_total)) + (soma_maior * (frequenciat_maior/frequencia_total))
+                        # Salvar resultado em lista
+                        associacao = AssociationCART(gini, column)
+                        associacao.value = entrada
+                        lista_ganhos_por_valor.append(associacao)
+                    else:
+                        # Se entrada for None, contabilizar quantidade
+                        for instancia in data[column]:
+                            if ( (instancia == None) ):
+                                n_none = n_none + 1
+                # Obter valor numérico de maior gini ponderado
+                associacao_final = lista_ganhos_por_valor[0]
+                for associacao in lista_ganhos_por_valor:
+                    if (associacao.gini > associacao_final.gini):
+                        associacao_final = associacao
+                # Adicionar resultado à lista
+                attributes_gain.append(associacao_final)
+            # Atributos que não sejam numéricos
+            else:
+                lista_ganhos_por_valor = []
+                gini = 0
+                # Número de instâncias nulas da coluna
+                n_none = 0
+                # Cálculo de gini
+                # Para cada entrada possível
+                for entrada in lista_resultados:
+                    if entrada != None:
+                        soma_diferente = 0
+                        soma_igual = 0
+                        frequenciat_diferente = 0  # Frequência total
+                        frequenciat_igual = 0      # Frequência total
+                        # Contabilizar instancias da entrada iguais e diferentes
+                        for instancia in data[column]:
+                            if ( instancia != None ):
+                                if instancia == entrada:
+                                    frequenciat_igual = frequenciat_igual + 1
+                                else:
+                                    frequenciat_diferente = frequenciat_diferente + 1
+                        frequencia_total = frequenciat_igual + frequenciat_diferente
+                        # Contabilizar quantos em cada resultado
+                        for resultado in resultados_distintos:
+                            frequencia = 0
+                            frequencia_diferente = 0
+                            frequencia_igual = 0
+                            for instancia in data.index:
+                                if ( (results[instancia] == resultado) ):
+                                    frequencia = frequencia + 1
+                                    if (data[column][instancia] == entrada):
+                                        frequencia_igual = frequencia_igual + 1
+                                    else:
+                                        frequencia_diferente = frequencia_diferente + 1
+                            # Probabilidade do resultado ^ 2
+                            # Somar ao dos demais resultados
+                            # Se a frequência for zero, efetivamente somamos 0, o que significa nada
+                            if frequencia != 0:
+                                # Menor/Igual
+                                soma_igual = soma_igual + pow((frequencia_igual/(frequencia_igual+frequencia_diferente)), 2)
+                                # Maior
+                                soma_diferente = soma_diferente + pow((frequencia_diferente/(frequencia_igual+frequencia_diferente)), 2)
+                        # Para obter gini, subtrair de 1 o somatório das probabilidades
+                        soma_igual = 1 - soma_igual
+                        soma_diferente = 1 - soma_diferente
+                        # Obter gini ponderado
+                        gini = (soma_igual * (frequenciat_igual/frequencia_total)) + (soma_diferente * (frequenciat_diferente/frequencia_total))
+                        # Salvar resultado em lista
+                        associacao = AssociationCART(gini, column)
+                        associacao.value = entrada
+                        lista_ganhos_por_valor.append(associacao)
+                    else:
+                        # Se entrada for None, contabilizar quantidade
+                        for instancia in data[column]:
+                            if ( (instancia == None) ):
+                                n_none = n_none + 1
+                # Obter valor numérico de maior gini ponderado
+                associacao_final = lista_ganhos_por_valor[0]
+                for associacao in lista_ganhos_por_valor:
+                    if (associacao.gini > associacao_final.gini):
+                        associacao_final = associacao
+                # Adicionar resultado à lista
+                attributes_gain.append(associacao_final)
+        # Varrer lista e definir coluna que provém maior gini
+        associacao_final = attributes_gain[0]
+        for associacao in attributes_gain:
+            if associacao.gini > associacao_final.gini:
+                associacao_final = associacao
+        # Se a razão de ganho for abaixo do mínimo estabelecido, retornar nulo
+        if (associacao_final.gini < self.min_information):
+            return None
+        # Criar regra resultado
+        regra = rule.DecisionRuleC45(associacao_final.coluna, associacao_final.gini, data, results, level)
+        # Caso seja coluna de valor numérico
+        if associacao_final.value != None:
+            regra.value = associacao_final.value
+            # Uma conexão para valores maiores e uma para menores
+            regra.connections.append(rule.Connection('>'))
+            regra.connections.append(rule.Connection('<='))
+        else:
+            regra.value = associacao_final.value
+            # Uma conexão para valores diferentes e uma para iguais
+            regra.connections.append(rule.Connection('=='))
+            regra.connections.append(rule.Connection('!='))
+        # Retornar resultado
+        return regra
+    
+#-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_
+# Teste da árvore
+
+    def test_tree(self, test_data, test_results):
+        confusionMatrix = pd.DataFrame(index=self.results_list, columns=self.results_list)
+        for instancia in test_data.index:
+            confusionMatrix = self.test_rule(self.root, test_data, test_results, instancia, confusionMatrix)
+        return confusionMatrix
+
+    def test_rule(self, rule, test_data, test_results, instancia, confusionMatrix):
+        # Testar se o nó é final ou não
+        if rule.attribute == '(Final)':
+            # Adicionar mais um na matriz
+            # Coluna é o resultado esperado
+            # Linha é o real
+            confusionMatrix[rule.result][test_results[instancia]] += 1
+        else:
+            # Checar a qual ramo a instância pertence
+            for ramo in rule.connections:
+                if ( (type(rule.value) == int) or (type(rule.value) == float) ):
+                    if test_data[rule.attribute][instancia] != None:
+                        if ramo.result_name == '>' and test_data[rule.attribute][instancia] > rule.value:
+                            confusionMatrix = self.test_rule(self, ramo.rule, test_data, test_results, instancia, confusionMatrix)
+                        elif ramo.result_name == '<=' and test_data[rule.attribute][instancia] <= rule.value:
+                            confusionMatrix = self.test_rule(self, ramo.rule, test_data, test_results, instancia, confusionMatrix)
+                    else:
+                        confusionMatrix[rule.result][test_results[instancia]] += 1
+                else:
+                    if test_data[rule.attribute][instancia] != None:
+                        if ramo.result_name == '==' and test_data[rule.attribute][instancia] == rule.value:
+                            confusionMatrix = self.test_rule(self, ramo.rule, test_data, test_results, instancia, confusionMatrix)
+                        elif ramo.result_name == '!=' and test_data[rule.attribute][instancia] != rule.value:
+                            confusionMatrix = self.test_rule(self, ramo.rule, test_data, test_results, instancia, confusionMatrix)
+                    else:
+                        confusionMatrix[rule.result][test_results[instancia]] += 1
+        return confusionMatrix
+
+#-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_
+# Print da árvore
+    
+    def __str__(self):
+        return self.rule_to_str(self.root, "")
+
+    def rule_to_str(self, current_rule, attribute_name):
+        # Retornar vazio se regra for vazia
+        if current_rule == None:
+            return f"{attribute_name}"
+        current_str = ""
+        # Indentação em acordo com profundidade da árvore
+        for i in range(current_rule.level):
+            current_str = current_str + "\t"
+        # Adicionar valor de atributo que deriva de
+        if current_rule.value != None:
+            current_str = current_str + "{" + attribute_name + current_rule.value + "}  "
+        else:
+            current_str = current_str + "{" + attribute_name + "}  "
+        current_str = current_str + str(current_rule)
+        #print(current_str)
+        # Adicionar as ramificações
+        # Falta inserir as conexões em si para exibir
+        for branch in current_rule.connections:
+            current_str = current_str + "\n" + self.rule_to_str(branch.rule, branch.result_name)
+        return current_str
+
+#-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-
+#_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_
 # Classe de suporte
 
 class AssociationID3:
@@ -583,6 +908,14 @@ class AssociationID3:
 class AssociationC45:
     def __init__(self, ganho, coluna):
         self.ganho = ganho
+        self.coluna = coluna
+        # Valor para divisão em caso de valor numérico
+        # None por padrão para caso de Strings e outros
+        self.value = None
+
+class AssociationCART:
+    def __init__(self, gini, coluna):
+        self.gini = gini
         self.coluna = coluna
         # Valor para divisão em caso de valor numérico
         # None por padrão para caso de Strings e outros
