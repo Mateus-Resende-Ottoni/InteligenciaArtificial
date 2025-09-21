@@ -1,6 +1,6 @@
 import pandas as pd
 import math
-import rule
+from . import rule
 
 # Receber matriz completa de dados
 def data_classification(data):
