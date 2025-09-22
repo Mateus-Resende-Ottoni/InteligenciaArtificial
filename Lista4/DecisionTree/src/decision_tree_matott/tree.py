@@ -1,6 +1,7 @@
 import pandas as pd
 import math
-from . import rule
+#from . import rule
+import rule
 
 # Receber matriz completa de dados
 def data_classification(data):
@@ -13,23 +14,22 @@ def data_classification(data):
     test_data = test_data
     test_result = test_data
 
+def teste(valor):
+    print(f"Testando {valor}")
+
 #-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-
 #_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_
 # Criação do objeto
 
 class ID3:
     # Criar árvore
-    def __init__ (self, max_height, min_information, data, results, classification_attribute):
+    def __init__ (self, max_height, min_information, results):
         # Altura máxima
         # -1 significa que não tem máximo
         self.max_height = max_height
         self.current_height = 0
         # Regras para o ganho de informação
         self.min_information = min_information
-        # Base de dados inicial
-        self.data = data
-        # Atributo buscado na classificação
-        self.classification_attribute = classification_attribute
         # Contar na coluna de resultados quantos há
         self.results_list = list(set(results))
         self.results_n = len(list(set(results)))
@@ -49,15 +49,19 @@ class ID3:
     # Método para montagem de árvore
     def define_rule(self, current_rule, data, result, level):
         # Chamar método de determinação de atributo e salvar regra de montagem
+        #print(level)
         regra_resultante = self.define_attribute(data, result, level)
         #print(regra_resultante)
         #print("-     -------------------     -")
         #current_rule = regra_resultante
-        # Se retorno tiver sido nulo, parar
+        # Se retorno tiver sido nulo ou ganho de informação for 0, parar
         # Retorno nulo significa que o ganho na regra não foi suficiente
-        if ( (regra_resultante != None) ):
+        # Ganho de informação 0 implica que não há mais informação a ser extraída da árvore
+        if ( (regra_resultante != None) and (regra_resultante.information_gain != 0.0) ):
+            if level > self.current_height:
+                self.current_height = level
             # Se ainda não tiver chegado no limite de altura 
-            if ( (self.current_height < self.max_height) or (self.max_height == -1) ):
+            if ( (level < self.max_height) or (self.max_height == -1) ):
                 # Para cada ramo, chamar método de montagem da árvore
                 for ramo in regra_resultante.connections:
                         # Uma forma mais eficiente é adicionar quando corresponder ao critério
@@ -71,8 +75,8 @@ class ID3:
                             data_branch = data_branch.drop(index=row)
                             result_branch = result_branch.drop(index=row)
                     # Chamar método de montagem da regra
-                    #print("\n\n"); print(data_branch)
-                    #print("\n");   print(result_branch); print("\n\n")
+                    #print("\n\n"); #print(data_branch)
+                    #print("\n");   #print(result_branch); #print("\n\n")
                     ramo.rule = self.define_rule(ramo.rule, data_branch, result_branch, level+1)
         return regra_resultante
 
@@ -219,13 +223,14 @@ class ID3:
     def rule_to_str(self, current_rule, attribute_name):
         # Retornar vazio se regra for vazia
         if current_rule == None:
-            return f"{attribute_name}"
+            #return f"{attribute_name}"
+            return ""
         current_str = ""
         # Indentação em acordo com profundidade da árvore
         for i in range(current_rule.level):
-            current_str = current_str + "\t"
+            current_str = current_str + "  "
         # Adicionar valor de atributo que deriva de
-        current_str = current_str + "{" + attribute_name + "}" + "  "
+        current_str = current_str + "{" + str(attribute_name) + "}" + "  "
         current_str = current_str + str(current_rule)
         #print(current_str)
         # Adicionar as ramificações
@@ -243,17 +248,13 @@ class ID3:
 
 class C45:
     # Criar árvore
-    def __init__ (self, max_height, min_information, data, results, classification_attribute):
+    def __init__ (self, max_height, min_information, results):
         # Altura máxima
         # -1 significa que não tem máximo
         self.max_height = max_height
         self.current_height = 0
         # Regras para o ganho de informação
         self.min_information = min_information
-        # Base de dados inicial
-        self.data = data
-        # Atributo buscado na classificação
-        self.classification_attribute = classification_attribute
         # Contar na coluna de resultados quantos há
         self.results_list = list(set(results))
         self.results_n = len(list(set(results)))
@@ -273,13 +274,19 @@ class C45:
     def define_rule(self, current_rule, data, result, level):
         # Chamar método de determinação de atributo e salvar regra de montagem
         regra_resultante = self.define_attribute(data, result, level)
-        # Se retorno tiver sido nulo, parar
+        # Se retorno tiver sido nulo ou ganho de informação for 0, parar
         # Retorno nulo significa que o ganho na regra não foi suficiente
-        if ( (regra_resultante != None) ):
+        # Ganho de informação 0 implica que não há mais informação a ser extraída da árvore
+        if ( (regra_resultante != None) and (regra_resultante.gain_ratio != 0.0) ):
+            if level > self.current_height:
+                self.current_height = level
             # Se ainda não tiver chegado no limite de altura 
-            if ( (self.current_height < self.max_height) or (self.max_height == -1) ):
+            if ( (level < self.max_height) or (self.max_height == -1) ):
                 # Para caso seja uma regra para atributo numérico
                 if regra_resultante.value != None:
+                    #print(f"regra coluna: {regra_resultante.attribute}")
+                    regra_value = float(regra_resultante.value)
+                    #print(f"regra value: {regra_value}")
                     # Para cada ramo, chamar método de montagem da árvore
                     for ramo in regra_resultante.connections:
                         # Tabela completa para remover atributos que não encaixarem
@@ -288,16 +295,22 @@ class C45:
                         if (ramo.result_name == '>'):
                             # Remover dados não pertencentes ao ramo
                             for row in data.index:
-                                if data[regra_resultante.attribute][row] <= regra_resultante.value or data[regra_resultante.attribute][row] == None:
+                                current_data = float(data[regra_resultante.attribute][row])
+                                if ((current_data <= regra_value) or (current_data == None)):
+                                    #print(f"{regra_value} >= {current_data}")
                                     data_branch = data_branch.drop(index=row)
                                     result_branch = result_branch.drop(index=row)
                         else:
                             # Remover dados não pertencentes ao ramo
                             for row in data.index:
-                                if data[regra_resultante.attribute][row] > regra_resultante.value or data[regra_resultante.attribute][row] == None:
+                                current_data = float(data[regra_resultante.attribute][row])
+                                if ((current_data > regra_value) or (current_data == None)):
                                     data_branch = data_branch.drop(index=row)
                                     result_branch = result_branch.drop(index=row)
                         # Chamar método de montagem da regra
+                        #if(len(data_branch) == 0):
+                            #print(f"Original data: {len(data)}")
+                            #print(regra_resultante); print(f"{ramo.result_name} {regra_resultante.value}")
                         ramo.rule = self.define_rule(ramo.rule, data_branch, result_branch, level+1)
                 else:
                     # Para cada ramo, chamar método de montagem da árvore
@@ -311,6 +324,8 @@ class C45:
                                 data_branch = data_branch.drop(index=row)
                                 result_branch = result_branch.drop(index=row)
                         # Chamar método de montagem da regra
+                        #if(len(data_branch) == 0):
+                            #print(regra_resultante); print(ramo.result_name)
                         ramo.rule = self.define_rule(ramo.rule, data_branch, result_branch, level+1)
         return regra_resultante
 
@@ -322,6 +337,8 @@ class C45:
         n_instancias = len(data)
         resultados_distintos = list(set(results))
         n_resultados = len(list(set(results)))
+
+        #print(f"resultados distinto: {resultados_distintos}")
 
         # Caso só haja um resultado distinto, não é necessário determinar uma regra
         if n_resultados == 1:
@@ -347,11 +364,14 @@ class C45:
             valor_teste = 0
             # Para evitar o teste a seguir com um valor de None
             # Supõe-se que terá ao menos um valor não nulo
-            while type(lista_resultados[valor_teste]) == None:
+            #print(f"n_total: {n_instancias}, coluna: {column}")
+            #print(lista_resultados)
+            while (type(lista_resultados[valor_teste]) == None):
                 valor_teste = valor_teste + 1
             # Se forem valores numéricos, tratar de forma diferente
             # Supõe-se que o tipo é consistente, então não é necessário testar o tipo de todas possibilidades
             if type(lista_resultados[valor_teste]) == int or type(lista_resultados[valor_teste]) == float:
+                #print(f"Coluna numérica: {column}")
                 lista_ganhos_por_valor = []
                 ganhoinfo = entropia_classe
                 # Variável do somatório
@@ -390,14 +410,20 @@ class C45:
                             # Somar ao dos demais resultados
                             # Se a frequência for zero, efetivamente somamos 0, o que significa nada
                             if frequencia != 0:
+                                #print(n_resultados)
+                                #print(f"freqt_menorigual: {frequenciat_menorigual}, freqt_maior: {frequenciat_maior}")
+                                #print(f"freq_menorigual: {frequencia_menorigual}, freq_maior: {frequencia_maior}")
+                                #print("")
                                 # Menor/Igual
-                                freq_div_menorigual = (frequencia_menorigual * 1.0)/(frequenciat_menorigual * 1.0)
-                                entropia_menorigual = freq_div_menorigual * (math.log(freq_div_menorigual, n_resultados))
-                                soma_menorigual = soma_menorigual + entropia_menorigual
+                                if frequencia_menorigual != 0:
+                                    freq_div_menorigual = (frequencia_menorigual * 1.0)/(frequenciat_menorigual * 1.0)
+                                    entropia_menorigual = freq_div_menorigual * (math.log(freq_div_menorigual, n_resultados))
+                                    soma_menorigual = soma_menorigual + entropia_menorigual
                                 # Maior
-                                freq_div_maior = (frequencia_maior * 1.0)/(frequenciat_maior * 1.0)
-                                entropia_maior = freq_div_maior * (math.log(freq_div_maior, n_resultados))
-                                soma_maior = soma_maior + entropia_maior
+                                if frequencia_maior != 0:
+                                    freq_div_maior = (frequencia_maior * 1.0)/(frequenciat_maior * 1.0)
+                                    entropia_maior = freq_div_maior * (math.log(freq_div_maior, n_resultados))
+                                    soma_maior = soma_maior + entropia_maior
                         # Multiplicar por -1 (correção devido a como log funciona)
                         soma_menorigual = soma_menorigual * (-1)
                         soma_maior = soma_maior * (-1)
@@ -405,7 +431,7 @@ class C45:
                         soma_menorigual = soma_menorigual * ( (frequenciat_menorigual * 1.0) / (n_instancias * 1.0) )
                         soma_maior = soma_maior * ( (frequenciat_maior * 1.0) / (n_instancias * 1.0) )
                         # Somar resultado
-                        soma_ganhoinfo = soma_menorigual = soma_maior
+                        soma_ganhoinfo = soma_menorigual + soma_maior
                         # Salvar resultado em lista (ainda em forma de entropia para não calcular desnecessariamente)
                         associacao = AssociationC45(soma_ganhoinfo, column)
                         associacao.value = entrada
@@ -431,6 +457,7 @@ class C45:
                 attributes_gain.append(associacao_final)
             # Atributos que não sejam numéricos
             else:
+                #print(f"Coluna não numérica: {column}")
                 ganhoinfo = entropia_classe
                 # Variável do somatório
                 somatorio_ganhoinfo = 0
@@ -440,6 +467,7 @@ class C45:
                 # Cálculo de entropia
                 # Para cada entrada possível
                 for entrada in lista_resultados:
+                    #print(f"c4.5, calculating for entrada {entrada}")
                     if entrada != None:
                         soma_ganhoinfo = 0
                         soma_splitinfo = 0
@@ -450,21 +478,29 @@ class C45:
                                 frequencia_entrada = frequencia_entrada + 1
                         # Contabilizar quantos número em cada resultado
                         for resultado in resultados_distintos:
+                            #print(f"calculating for entrada {entrada} resultado {resultado}")
                             frequencia = 0
                             for instancia in data.index:
                                 if ( (data[column][instancia] == entrada) & (results[instancia] == resultado) ):
                                     frequencia = frequencia + 1
+                            #print(f"frequencia_entrada = {frequencia_entrada} e frequencia = {frequencia}")
                             # Probabilidade do resultado * Log 2 da probabilidade
                             # Somar ao dos demais resultados
                             # Se a frequência for zero, efetivamente somamos 0, o que significa nada
                             if frequencia != 0:
+                                #print("frequencia != 0")
+                                # frequencia é a entrada com o valor atual que também tem o resultado atual
+                                # frequencia_entrada é a entrada com o valor atual
+                                # n_instancias é o total do dataset
                                 freq_div_freqentrada = (frequencia * 1.0)/(frequencia_entrada * 1.0)
                                 entropia_atual = freq_div_freqentrada * (math.log(freq_div_freqentrada, n_resultados))
                                 soma_ganhoinfo = soma_ganhoinfo + entropia_atual
+                                #print(f"div {freq_div_freqentrada} e soma_ganhoinfo {soma_ganhoinfo}")
                                 #
-                                prob_splitinfo = (frequencia_entrada * 1.0)/(n_instancias)
+                                prob_splitinfo = (frequencia_entrada * 1.0)/(n_instancias * 1.0)
                                 splitinfo = prob_splitinfo * (math.log(prob_splitinfo, n_resultados))
                                 soma_splitinfo = soma_splitinfo + splitinfo
+                                #print(f"prob {prob_splitinfo} e soma_splitinfo {soma_splitinfo}")
                         # Multiplicar por -1 (correção devido a como log funciona)
                         soma_ganhoinfo = soma_ganhoinfo * (-1)
                         soma_splitinfo = soma_splitinfo * (-1)
@@ -484,14 +520,19 @@ class C45:
                 # Ganho é proporcional ao número não nulo
                 ganhoinfo = ganhoinfo * ((n_instancias-n_none)/n_instancias)
                 # Razão de ganho = Ganho / SplitInfo
-                gainratio = ganhoinfo/somatorio_splitinfo
-                # Adicionar resultado à lista
-                attributes_gain.append(AssociationC45(gainratio, column))
+                #print(f"gainratio = {ganhoinfo} / {somatorio_splitinfo}")
+                if (somatorio_splitinfo == 0):
+                    attributes_gain.append(AssociationC45(0.0, column))
+                else:
+                    gainratio = ganhoinfo/somatorio_splitinfo
+                    # Adicionar resultado à lista
+                    attributes_gain.append(AssociationC45(gainratio, column))
         # Varrer lista e definir coluna que provém maior razão de ganho
         associacao_final = attributes_gain[0]
         for associacao in attributes_gain:
             if associacao.ganho > associacao_final.ganho:
                 associacao_final = associacao
+        #print(f"C4.5 Associação final ganho: {associacao_final.ganho}")
         # Se a razão de ganho for abaixo do mínimo estabelecido, retornar nulo
         if (associacao_final.ganho < self.min_information):
             return None
@@ -509,6 +550,7 @@ class C45:
             for valor in valores_coluna:
                 regra.connections.append(rule.Connection(valor))
         # Retornar resultado
+        #print(f"C4.5 Gain Ratio: {regra.gain_ratio}")
         return regra
     
 #-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_
@@ -552,16 +594,17 @@ class C45:
     def rule_to_str(self, current_rule, attribute_name):
         # Retornar vazio se regra for vazia
         if current_rule == None:
-            return f"{attribute_name}"
+            #return f"{attribute_name}"
+            return ""
         current_str = ""
         # Indentação em acordo com profundidade da árvore
         for i in range(current_rule.level):
-            current_str = current_str + "\t"
+            current_str = current_str + "  "
         # Adicionar valor de atributo que deriva de
         if current_rule.value != None:
-            current_str = current_str + "{" + attribute_name + current_rule.value + "}  "
+            current_str = current_str + "{" + str(attribute_name) + str(current_rule.value) + "}  "
         else:
-            current_str = current_str + "{" + attribute_name + "}  "
+            current_str = current_str + "{" + str(attribute_name) + "}  "
         current_str = current_str + str(current_rule)
         #print(current_str)
         # Adicionar as ramificações
@@ -578,17 +621,13 @@ class C45:
 
 class CART:
     # Criar árvore
-    def __init__ (self, max_height, min_information, data, results, classification_attribute):
+    def __init__ (self, max_height, min_information, results):
         # Altura máxima
         # -1 significa que não tem máximo
         self.max_height = max_height
         self.current_height = 0
         # Regras para o ganho de informação
         self.min_information = min_information
-        # Base de dados inicial
-        self.data = data
-        # Atributo buscado na classificação
-        self.classification_attribute = classification_attribute
         # Contar na coluna de resultados quantos há
         self.results_list = list(set(results))
         self.results_n = len(list(set(results)))
@@ -608,11 +647,14 @@ class CART:
     def define_rule(self, current_rule, data, result, level):
         # Chamar método de determinação de atributo e salvar regra de montagem
         regra_resultante = self.define_attribute(data, result, level)
-        # Se retorno tiver sido nulo, parar
+        # Se retorno tiver sido nulo ou ganho de informação for 0, parar
         # Retorno nulo significa que o ganho na regra não foi suficiente
-        if ( (regra_resultante != None) ):
+        # Ganho de informação 0 implica que não há mais informação a ser extraída da árvore
+        if ( (regra_resultante != None) and (regra_resultante.gini != 0.0) ):
+            if level > self.current_height:
+                self.current_height = level
             # Se ainda não tiver chegado no limite de altura 
-            if ( (self.current_height < self.max_height) or (self.max_height == -1) ):
+            if ( (level < self.max_height) or (self.max_height == -1) ):
                 # Para caso seja uma regra para atributo numérico
                 if ( (type(regra_resultante.value) == int) or (type(regra_resultante.value) == float) ):
                     # Para cada ramo, chamar método de montagem da árvore
@@ -816,7 +858,7 @@ class CART:
         if (associacao_final.gini < self.min_information):
             return None
         # Criar regra resultado
-        regra = rule.DecisionRuleC45(associacao_final.coluna, associacao_final.gini, data, results, level)
+        regra = rule.DecisionRuleCART(associacao_final.coluna, associacao_final.gini, data, results, level)
         # Caso seja coluna de valor numérico
         if associacao_final.value != None:
             regra.value = associacao_final.value
@@ -877,16 +919,17 @@ class CART:
     def rule_to_str(self, current_rule, attribute_name):
         # Retornar vazio se regra for vazia
         if current_rule == None:
-            return f"{attribute_name}"
+            #return f"{attribute_name}"
+            return ""
         current_str = ""
         # Indentação em acordo com profundidade da árvore
         for i in range(current_rule.level):
-            current_str = current_str + "\t"
+            current_str = current_str + "  "
         # Adicionar valor de atributo que deriva de
         if current_rule.value != None:
-            current_str = current_str + "{" + attribute_name + current_rule.value + "}  "
+            current_str = current_str + "{" + str(attribute_name) + str(current_rule.value) + "}  "
         else:
-            current_str = current_str + "{" + attribute_name + "}  "
+            current_str = current_str + "{" + str(attribute_name) + "}  "
         current_str = current_str + str(current_rule)
         #print(current_str)
         # Adicionar as ramificações

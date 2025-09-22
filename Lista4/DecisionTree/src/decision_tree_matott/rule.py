@@ -41,7 +41,7 @@ class DecisionRuleID3:
     def __str__(self):
         resultados = ""
         for resultado in self.result_ns:
-            resultados = resultados + "/" + resultado.name + " " + str(resultado.frequency) + "/"
+            resultados = resultados + "/'" + str(resultado.name) + "' " + str(resultado.frequency) + "/"
         return (f"{self.level} - {self.result} ({resultados}) | Informacao: {self.information_gain} | Regra derivada: {self.attribute}")
 #-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-
 #_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_
@@ -89,7 +89,7 @@ class DecisionRuleC45:
     def __str__(self):
         resultados = ""
         for resultado in self.result_ns:
-            resultados = resultados + "/" + resultado.name + " " + str(resultado.frequency) + "/"
+            resultados = resultados + "/" + str(resultado.name) + " " + str(resultado.frequency) + "/"
         return (f"{self.level} - {self.result} ({resultados}) | Razão de ganho: {self.gain_ratio} | Regra derivada: {self.attribute}")
 #-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-
 #_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_
@@ -135,8 +135,8 @@ class DecisionRuleCART:
     def __str__(self):
         resultados = ""
         for resultado in self.result_ns:
-            resultados = resultados + "/" + resultado.name + " " + str(resultado.frequency) + "/"
-        return (f"{self.level} - {self.result} ({resultados}) | Razão de ganho: {self.gain_ratio} | Regra derivada: {self.attribute}")
+            resultados = resultados + "/" + str(resultado.name) + " " + str(resultado.frequency) + "/"
+        return (f"{self.level} - {self.result} ({resultados}) | Razão de ganho: {self.gini} | Regra derivada: {self.attribute}")
 #-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-
 #_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_
 # Classes de suporte
