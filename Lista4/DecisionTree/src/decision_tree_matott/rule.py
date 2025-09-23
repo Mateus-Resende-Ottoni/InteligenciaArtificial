@@ -97,7 +97,7 @@ class DecisionRuleCART:
     def __init__(self, attribute, gini, data, data_results, level):
         # Nome da coluna determinante
         self.attribute = attribute
-        # Gini ponderado
+        # Gini
         self.gini = gini
         # Matriz de dados usada
         self.data = data
@@ -136,7 +136,7 @@ class DecisionRuleCART:
         resultados = ""
         for resultado in self.result_ns:
             resultados = resultados + "/" + str(resultado.name) + " " + str(resultado.frequency) + "/"
-        return (f"{self.level} - {self.result} ({resultados}) | Razão de ganho: {self.gini} | Regra derivada: {self.attribute}")
+        return (f"{self.level} - {self.result} ({resultados}) | Gini: {self.gini} | Regra derivada: {self.attribute}")
 #-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-
 #_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_
 # Classes de suporte
