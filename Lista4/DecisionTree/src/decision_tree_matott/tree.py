@@ -1,7 +1,7 @@
 import pandas as pd
 import math
-#from . import rule
-import rule
+from . import rule
+#import rule
 
 # Receber matriz completa de dados
 def data_classification(data):
@@ -202,30 +202,30 @@ class ID3:
             for row in self.results_list:
                 confusionMatrix.loc[row, column] = 0
         for instancia in test_data.index:
-            confusionMatrix = self.test_rule(self.root, test_data, test_results, instancia, confusionMatrix)
+            confusionMatrix = self.test_rule(rule= self.root, instancia= test_data.loc[instancia], instancia_result= test_results.loc[instancia], confusionMatrix= confusionMatrix)
         return confusionMatrix
 
-    def test_rule(self, rule, test_data, test_results, instancia, confusionMatrix):
+    def test_rule(self, rule, instancia, instancia_result, confusionMatrix):
         # Testar se o nó é final ou não
         if rule.attribute == '(Final)':
             # Adicionar mais um na matriz
             # Coluna é o resultado esperado
             # Linha é o real
-            confusionMatrix.loc[test_results[instancia], rule.result] += 1
+            confusionMatrix.loc[instancia_result, rule.result] += 1
         else:
             # Checar a qual ramo a instância pertence
             for ramo in rule.connections:
-                if ramo.result_name == test_data[rule.attribute][instancia]:
-                    confusionMatrix = self.test_rule(ramo.rule, test_data, test_results, instancia, confusionMatrix)
+                if ramo.result_name == instancia[rule.attribute]:
+                    confusionMatrix = self.test_rule(rule= ramo.rule, instancia= instancia, instancia_result= instancia_result, confusionMatrix= confusionMatrix)
         return confusionMatrix
 
 #-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_
 # Print da árvore
     
     def __str__(self):
-        return self.rule_to_str(self.root, "")
+        return self.rule_to_str(current_rule= self.root, attribute_name= "", father_rule_column= None)
 
-    def rule_to_str(self, current_rule, attribute_name):
+    def rule_to_str(self, current_rule, attribute_name, father_rule_column):
         # Retornar vazio se regra for vazia
         if current_rule == None:
             #return f"{attribute_name}"
@@ -235,13 +235,14 @@ class ID3:
         for i in range(current_rule.level):
             current_str = current_str + "  "
         # Adicionar valor de atributo que deriva de
-        current_str = current_str + "{" + str(attribute_name) + "}" + "  "
+        if father_rule_column != None:
+            current_str = current_str + "{" + str(father_rule_column) + "==" + str(attribute_name) + "}" + "  "
         current_str = current_str + str(current_rule)
         #print(current_str)
         # Adicionar as ramificações
         # Falta inserir as conexões em si para exibir
         for branch in current_rule.connections:
-            current_str = current_str + "\n" + self.rule_to_str(branch.rule, branch.result_name)
+            current_str = current_str + "\n" + self.rule_to_str(current_rule= branch.rule, attribute_name= branch.result_name, father_rule_column= current_rule.attribute)
         return current_str
 
 #-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-
@@ -569,41 +570,41 @@ class C45:
             for row in self.results_list:
                 confusionMatrix.loc[row, column] = 0
         for instancia in test_data.index:
-            confusionMatrix = self.test_rule(self.root, test_data, test_results, instancia, confusionMatrix)
+            confusionMatrix = self.test_rule(rule= self.root, instancia= test_data.loc[instancia], instancia_result= test_results.loc[instancia], confusionMatrix= confusionMatrix)
         return confusionMatrix
 
-    def test_rule(self, rule, test_data, test_results, instancia, confusionMatrix):
+    def test_rule(self, rule, instancia, instancia_result, confusionMatrix):
         # Testar se o nó é final ou não
         if rule.attribute == '(Final)':
             # Adicionar mais um na matriz
             # Coluna é o resultado esperado
             # Linha é o real
-            confusionMatrix.loc[test_results[instancia], rule.result] += 1
+            confusionMatrix.loc[instancia_result, rule.result] += 1
         else:
             # Checar a qual ramo a instância pertence
             for ramo in rule.connections:
                 # Ramo numérico
                 if rule.value != None:
-                    if test_data[rule.attribute][instancia] != None:
-                        if ramo.result_name == '>' and test_data[rule.attribute][instancia] > rule.value:
-                            confusionMatrix = self.test_rule(ramo.rule, test_data, test_results, instancia, confusionMatrix)
-                        elif ramo.result_name == '<=' and test_data[rule.attribute][instancia] <= rule.value:
-                            confusionMatrix = self.test_rule(ramo.rule, test_data, test_results, instancia, confusionMatrix)
+                    if instancia[rule.attribute] != None:
+                        if ramo.result_name == '>' and instancia[rule.attribute] > rule.value:
+                            confusionMatrix = self.test_rule(rule= ramo.rule, instancia= instancia, instancia_result= instancia_result, confusionMatrix= confusionMatrix)
+                        elif ramo.result_name == '<=' and instancia[rule.attribute] <= rule.value:
+                            confusionMatrix = self.test_rule(rule= ramo.rule, instancia= instancia, instancia_result= instancia_result, confusionMatrix= confusionMatrix)
                     else:
-                        confusionMatrix.loc[test_results[instancia], rule.result] += 1
+                        confusionMatrix.loc[instancia_result, rule.result] += 1
                 # Não numérico
                 else:
-                    if ramo.result_name == test_data[rule.attribute][instancia]:
-                        confusionMatrix = self.test_rule(ramo.rule, test_data, test_results, instancia, confusionMatrix)
+                    if ramo.result_name == instancia[rule.attribute]:
+                        confusionMatrix = self.test_rule(rule= ramo.rule, instancia= instancia, instancia_result= instancia_result, confusionMatrix= confusionMatrix)
         return confusionMatrix
 
 #-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_
 # Print da árvore
     
     def __str__(self):
-        return self.rule_to_str(self.root, "")
+        return self.rule_to_str(current_rule= self.root, attribute_name= "", father_rule_value= None, father_rule_column= None)
 
-    def rule_to_str(self, current_rule, attribute_name):
+    def rule_to_str(self, current_rule, attribute_name, father_rule_value, father_rule_column):
         # Retornar vazio se regra for vazia
         if current_rule == None:
             #return f"{attribute_name}"
@@ -613,16 +614,21 @@ class C45:
         for i in range(current_rule.level):
             current_str = current_str + "  "
         # Adicionar valor de atributo que deriva de
-        if current_rule.value != None:
-            current_str = current_str + "{" + str(attribute_name) + str(current_rule.value) + "}  "
+        if father_rule_value != None:
+            current_str = current_str + "{" + str(father_rule_column) + str(attribute_name) + str(father_rule_value) + "}  "
         else:
-            current_str = current_str + "{" + str(attribute_name) + "}  "
+            if father_rule_column != None:
+                current_str = current_str + "{" + str(father_rule_column) + "==" + str(attribute_name) + "}  "
+            # Para a raíz não é necessário adicionar nada
         current_str = current_str + str(current_rule)
         #print(current_str)
         # Adicionar as ramificações
         # Falta inserir as conexões em si para exibir
         for branch in current_rule.connections:
-            current_str = current_str + "\n" + self.rule_to_str(branch.rule, branch.result_name)
+            if current_rule.value != None:
+                current_str = current_str + "\n" + self.rule_to_str(current_rule= branch.rule, attribute_name= branch.result_name, father_rule_value= current_rule.value, father_rule_column= current_rule.attribute)
+            else:
+                current_str = current_str + "\n" + self.rule_to_str(current_rule= branch.rule, attribute_name= branch.result_name, father_rule_value= None, father_rule_column= current_rule.attribute)
         return current_str
 
 #-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-
@@ -936,7 +942,7 @@ class CART:
             for row in self.results_list:
                 confusionMatrix.loc[row, column] = 0
         for instancia in test_data.index:
-            confusionMatrix = self.test_rule(self.root, test_data.loc[instancia], test_results.loc[instancia], confusionMatrix)
+            confusionMatrix = self.test_rule(rule= self.root, instancia= test_data.loc[instancia], instancia_result= test_results.loc[instancia], confusionMatrix= confusionMatrix)
         return confusionMatrix
 
     def test_rule(self, rule, instancia, instancia_result, confusionMatrix):
@@ -957,13 +963,13 @@ class CART:
                 #print("")
                 if instancia[rule.attribute] != None:
                     if   ( (ramo.result_name == '>')  and (float(instancia[rule.attribute]) >  float(rule.value)) ):
-                        confusionMatrix = self.test_rule(ramo.rule, instancia, instancia_result, confusionMatrix)
+                        confusionMatrix = self.test_rule(rule= ramo.rule, instancia= instancia, instancia_result= instancia_result, confusionMatrix= confusionMatrix)
                     elif ( (ramo.result_name == '<=') and (float(instancia[rule.attribute]) <= float(rule.value)) ):
-                        confusionMatrix = self.test_rule(ramo.rule, instancia, instancia_result, confusionMatrix)
+                        confusionMatrix = self.test_rule(rule= ramo.rule, instancia= instancia, instancia_result= instancia_result, confusionMatrix= confusionMatrix)
                     elif ( (ramo.result_name == '==') and (instancia[rule.attribute] == rule.value) ):
-                        confusionMatrix = self.test_rule(ramo.rule, instancia, instancia_result, confusionMatrix)
+                        confusionMatrix = self.test_rule(rule= ramo.rule, instancia= instancia, instancia_result= instancia_result, confusionMatrix= confusionMatrix)
                     elif ( (ramo.result_name == '!=') and (instancia[rule.attribute] != rule.value) ):
-                        confusionMatrix = self.test_rule(ramo.rule, instancia, instancia_result, confusionMatrix)
+                        confusionMatrix = self.test_rule(rule= ramo.rule, instancia= instancia, instancia_result= instancia_result, confusionMatrix= confusionMatrix)
                     #else:
                         #print(f"ramo result_name = {ramo.result_name}, rule.value = {rule.value}")
                 else:
@@ -974,9 +980,9 @@ class CART:
 # Print da árvore
     
     def __str__(self):
-        return self.rule_to_str(self.root, "")
+        return self.rule_to_str(current_rule= self.root, attribute_name= "", father_rule_value= None, father_rule_column= None)
 
-    def rule_to_str(self, current_rule, attribute_name):
+    def rule_to_str(self, current_rule, attribute_name, father_rule_value, father_rule_column):
         # Retornar vazio se regra for vazia
         if current_rule == None:
             #return f"{attribute_name}"
@@ -986,8 +992,8 @@ class CART:
         for i in range(current_rule.level):
             current_str = current_str + "  "
         # Adicionar valor de atributo que deriva de
-        if current_rule.value != None:
-            current_str = current_str + "{" + str(attribute_name) + str(current_rule.value) + "}  "
+        if father_rule_value != None:
+            current_str = current_str + "{" + str(father_rule_column) + str(attribute_name) + str(father_rule_value) + "}  "
         else:
             current_str = current_str + "{" + str(attribute_name) + "}  "
         current_str = current_str + str(current_rule)
@@ -995,7 +1001,10 @@ class CART:
         # Adicionar as ramificações
         # Falta inserir as conexões em si para exibir
         for branch in current_rule.connections:
-            current_str = current_str + "\n" + self.rule_to_str(branch.rule, branch.result_name)
+            if current_rule.value != None:
+                current_str = current_str + "\n" + self.rule_to_str(current_rule= branch.rule, attribute_name= branch.result_name, father_rule_value= current_rule.value, father_rule_column= current_rule.attribute)
+            else:
+                current_str = current_str + "\n" + self.rule_to_str(current_rule= branch.rule, attribute_name= branch.result_name, father_rule_value= None, father_rule_column= current_rule.attribute)
         return current_str
 
 #-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-
