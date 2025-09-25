@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "decision_tree_matott"
-version = "0.2.1"
+version = "0.3.0"
 authors = [
   { name="Mateus Ottoni", email="mateus.resende.ottoni@gmail.com" },
 ]

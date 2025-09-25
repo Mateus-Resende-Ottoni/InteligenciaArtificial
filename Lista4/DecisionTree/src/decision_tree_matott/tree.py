@@ -17,6 +17,60 @@ def data_classification(data):
 def teste(valor):
     print(f"Testando {valor}")
 
+def result_metrics(confusionMatrix):
+    lista_resultados = confusionMatrix.columns
+    lista_resultados.sort_values()
+
+    medidas = ['VP', 'FN', 'VN', 'FP', 'Precision', 'Recall', 'F1-Score', 'Accuracy']
+    medidas_inteiros = ['VP', 'FN', 'VN', 'FP']
+    medidas_float    = ['Precision', 'Recall', 'F1-Score', 'Accuracy']
+
+    # Inicializar tabela
+    data_results = pd.DataFrame(index=lista_resultados, columns=medidas)
+    for coluna in medidas_inteiros:
+        for index in lista_resultados:
+            data_results.loc[index, coluna] = 0
+    for coluna in medidas_float:
+        for index in lista_resultados:
+            data_results.loc[index, coluna] = 0.0
+
+    for previsao in lista_resultados:
+        for verdadeiro in lista_resultados:
+            # N atual na célula da tabela sendo inspecionada
+            n_atual = confusionMatrix[previsao][verdadeiro]
+            # Se coluna e index forem iguais, é uma previsão correta
+            if previsao == verdadeiro:
+                # Adicionar ao VP do resultado atual
+                data_results.loc[previsao, 'VP'] += n_atual
+                # Adicionar ao VN dos demais
+                for outros in lista_resultados:
+                    if outros != previsao:
+                        data_results.loc[outros, 'VN'] += n_atual
+            # Se forem diferentes, é uma previsão incorreta
+            else:
+                # Adicionar ao FP do resultado atual
+                data_results.loc[previsao, 'FP'] += n_atual
+                # Comparar aos demais para saber se é VN ou FN
+                for outros in lista_resultados:
+                    if outros != previsao:
+                        if outros == verdadeiro:
+                            data_results.loc[outros, 'FN'] += n_atual
+                        else:
+                            data_results.loc[outros, 'VN'] += n_atual
+
+    # Usar medidas obtidas para calcular as demais
+    for resultado in lista_resultados:
+        VP = data_results['VP'][resultado]; FP = data_results['FP'][resultado]
+        VN = data_results['VN'][resultado]; FN = data_results['FN'][resultado]
+        precision = 0.0
+        data_results.loc[resultado, 'Precision'] = precision = VP/(VP+FP)
+        recall = 0.0
+        data_results.loc[resultado, 'Recall'] = recall = VP/(VP+FN)
+        data_results.loc[resultado, 'F1-Score'] = (2*precision*recall)/(precision+recall)
+        data_results.loc[resultado, 'Accuracy'] = (VP+VN)/(VP+VN+FP+FN)
+
+    return data_results
+
 #-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-
 #_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_
 # Criação do objeto
