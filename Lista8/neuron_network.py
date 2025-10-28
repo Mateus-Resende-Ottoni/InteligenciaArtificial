@@ -42,6 +42,17 @@ class NeuronNetwork:
         return(peso)
 
 # ----- ----- ----- ----- ----- ----- -----
+
+# Para reduzir casas decimais
+    def shorten_nums(self, neuronio):
+        text = "[|"
+        n_pesos = len(neuronio)
+        for n in range(n_pesos):
+            text = text + f"{round(neuronio[n], 5)}" + "|"
+        text = text + "]"
+        return(text)
+
+# ----- ----- ----- ----- ----- ----- -----
         
     # Resultados intermediarios
     def instance_intermediario(self, entradas):
@@ -206,6 +217,20 @@ class NeuronNetwork:
             #print(n)
 
             diferenca = resultados_esperados[n] - resultados_obtidos[n]
+
+            # Como queremos calcular MSE, obter o quadrado da diferença
+            #diferenca = pow(diferenca, 2)
+
+            # Pelos meus testes, usar a diferença quadrática leva a resultados
+            #  desproporcionalmente piores do que não a usar.
+            # É provável que isso seja pois estou calculando e ajustando o erro
+            #  a cada execução (esqueci o nome desse método em específico)
+            # Então manterei o uso da diferença absoluta ao invés da quadrática,
+            #  mas fique registrado que é puramente devido a observações pessoais,
+            #  a forma certa seria adaptar o código para calcular o erro médio
+            #  quadrático após conferir todos os resultados para todas as entradas
+            #  e apenas após isso calcular a mudança de peso
+
             #print(f"Diferença: {diferenca}")
             resultados_diferencas.append(diferenca)
 
@@ -263,7 +288,7 @@ class NeuronNetwork:
         
 # ----- ----- ----- ----- ----- ----- -----
 
-    def run_network(self, num_generations, entradas, resultados_esperados, min_error_difference, min_error):
+    def run_network(self, num_generations, entradas, resultados_esperados, min_error):
 
         print(f"Start running network\n")
 
@@ -309,13 +334,13 @@ class NeuronNetwork:
             # Como existe a possibilidade de, no caso de vários neurônios de saída, 
             #  muitos estarem certos mas um estar errado, o erro máximo é para evitar
             #  a grande disparidade que pode ser ofuscada pela média
-            if ( ( abs(erro) < min_error ) and ( abs(erro_max) < (min_error*2) ) ):
+            if ( ( abs(erro) < min_error ) and ( abs(erro_max) < (min_error*1.5) ) ):
                 n_below_min_erro = n_below_min_erro + 1
             else:
                 n_below_min_erro = 0
 
             # Usando como base o número de entradas possíveis
-            if (n_below_min_erro >= n_entradas):
+            if (n_below_min_erro >= 2*n_entradas):
                 min_error_found = True
 
             # Próxima geração
@@ -332,8 +357,55 @@ class NeuronNetwork:
 
 # ----- ----- ----- ----- ----- ----- -----
                 
+    # Teste
+    def test_network(self, entradas, resultados_esperados):
 
+        print(f"Network test")
 
+        for n in range(len(entradas)):
+
+            # Obter resultado
+            resultados_intermediario = self.instance_intermediario(entradas[n])
+            resultados_obtidos = self.instance_result(entradas[n], resultados_intermediario)
+
+            print(f"Entrada: {entradas[n]}")
+            print(f"Resultado Esperado: {resultados_esperados[n]}")
+            print(f"Resultado Obtido: {self.shorten_nums(resultados_obtidos)}")
+            print(f"--- --- --- --- --- --- ---")
+
+# ----- ----- ----- ----- ----- ----- -----
+
+    # Teste porém com erros(ruído)
+    def test_network_noisy(self, entradas, resultados_esperados, n_erros):
+
+        print(f"Network test")
+
+        for n in range(len(entradas)):
+
+            # Aplicar ruído à entrada
+            n_aleatorio = 0
+            for e in range(n_erros):
+                intermediario = random.choice(range(0, len(entradas[n])))
+                # Para evitar aplicar no mesmo
+                if (n_aleatorio == intermediario):
+                    n_aleatorio = random.choice(range(0, len(entradas[n])))
+                else: 
+                    n_aleatorio = intermediario
+
+                # Alterar entrada
+                if entradas[n][n_aleatorio] == 1:
+                    entradas[n][n_aleatorio] = 0
+                else:
+                    entradas[n][n_aleatorio] = 1
+
+            # Obter resultado
+            resultados_intermediario = self.instance_intermediario(entradas[n])
+            resultados_obtidos = self.instance_result(entradas[n], resultados_intermediario)
+
+            print(f"Entrada: {entradas[n]}")
+            print(f"Resultado Esperado: {resultados_esperados[n]}")
+            print(f"Resultado Obtido: {self.shorten_nums(resultados_obtidos)}")
+            print(f"--- --- --- --- --- --- ---")#
         
         
 
